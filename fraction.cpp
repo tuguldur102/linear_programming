@@ -83,6 +83,16 @@ double Fraction::toDouble() const
     return static_cast<double>(numerator) / static_cast<double>(denominator);
 }
 
+bool Fraction::operator<(const Fraction &other) const
+{
+    return numerator * other.denominator < other.numerator * denominator;
+}
+
+bool Fraction::operator>(const Fraction &other) const
+{
+    return numerator * other.denominator > other.numerator * denominator;
+}
+
 // Custom printing: if denominator == 1 => just print numerator; if numerator == 0 => 0
 ostream &operator<<(ostream &os, const Fraction &fr) 
 {

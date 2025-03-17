@@ -5,6 +5,14 @@
     "ostream": "cpp",
     "iostream": "cpp",
     "iomanip": "cpp",
-    "tuple": "cpp"
+    "tuple": "cpp",
+    "string": "cpp",
+    "iosfwd": "cpp",
+    "optional": "cpp",
+    "system_error": "cpp",
+    "array": "cpp",
+    "functional": "cpp",
+    "type_traits": "cpp",
+    "utility": "cpp"
   }
 }

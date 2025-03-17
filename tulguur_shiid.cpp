@@ -5,17 +5,87 @@
 #include <sstream>
 #include <string>
 #include <iomanip>
+#include <unordered_map>
 using namespace std;
 
-struct Surug_Entry {
-  int index;
-  bool isAllPositive;
+struct sul_gishuun_entry {
+  int idx;
+  Fraction value;
+};
+
+struct surug_entry {
+  int idx;
+  Fraction value;
+  string status;
+  bool hasNegElem;
+};
+
+struct candidate_entry {
+  int row_idx;
+  int col_idx;
+};
+
+struct simplex_ratio {
+  int row_idx;
+  Fraction value;
 };
 
 string fractionToString(const Fraction &f) {
     std::ostringstream oss;
     oss << f;
     return oss.str();
+}
+
+void printSulGishuudAll(
+  vector<surug_entry> sul_gishuud
+  )
+{
+  cout << "Сөрөг сул гишүүд: " << endl;
+
+  for (const auto & entry : sul_gishuud)
+  {
+      cout << "Мөрийн дугаар : " << entry.idx + 1<< " "
+          << "Утга: " << entry.value << " "
+          << "Status: " << entry.status << " "
+          << "Сөрөг элементтэй эсэх: " << entry.hasNegElem << endl;
+  }
+}
+
+void printSulGishuud(
+  vector<surug_entry> sul_gishuud
+  )
+{
+  for (const auto & entry : sul_gishuud)
+  {
+      cout << "Мөрийн дугаар: " << entry.idx + 1 << " "
+          << "Утга: " << entry.value << " "
+          << "Сөрөг элементтэй эсэх: " << entry.hasNegElem << endl;
+  }
+}
+
+void printSearchSpace(
+  unordered_map<int, vector<int>> search_space
+  )
+{
+  cout << "~~~Хайлтын огторгуй~~~ " << endl;
+
+  if (!search_space.empty())
+  {
+      cout << "Сонгогдох Боломжит гол элементүүд: " << endl;
+      for (const auto &pair: search_space) 
+      {
+        cout << pair.first + 1<< " мөрөнд -> ";
+        for (int val : pair.second)
+        {
+          cout << val + 1<< " ";
+        }
+        cout << endl;
+      }
+  }
+  else
+  {
+      cout << "Хоосон байна!" << endl;
+  }
 }
 
 void printMatrix(
@@ -175,7 +245,8 @@ void tulguur_shiid(
     int cols, 
     vector<string> &free_vars,
     vector<string> &original_vars,
-    vector<tuple<int, Fraction>> &sul_gishuud
+    vector<sul_gishuun_entry> &sul_gishuud,
+    string sul_gishuun_direction
     ) 
 {
   // Анхны систем
@@ -191,110 +262,176 @@ void tulguur_shiid(
   bool tulguur_shiid_oldson = false;
   bool shiidgui_eseh = false;
 
-  while (!tulguur_shiid_oldson)
+  int count = 4;
+  while (count > 0)
   {
     // Сөрөг сул гишүүдийг хайх
-    bool surug_sul_gishuun_oldson = false;
-    
+    // Олдохгүй бол Тулгуур шийд олдсон гэсэн үг.
+    // bool surug_sul_gishuun_oldson = false;
+    unordered_map<int, vector<int>> search_space;
+    vector<surug_entry> canditate_sul_gishuud;
     // Сөрөг сул гишүүн байгаа мөрийн дугааруудыг хадгалах
-    vector<Surug_Entry> surug_sg_murnuud;
 
-    // Сөрөг сул гишүүдийг dictionary буюу vector<tuple> бүтцээр
+    // Сөрөг сул гишүүдийг nested dictionary буюу vector<surug_entry> бүтцээр
     // хадгалсан ба эхний элемент нь мөрийн дугаарыг болон удаахь нь
     // Тухайн мөрөнд харгалзах сул гишүүний утгыг хадгална
+    // Дараагаар сонгогдох боломжтой утгууд хадгалагдана
     // Иймд харгалзах мөрийн дугаарыг хадгалахад хялбар болно.
-    for (const auto & [index, val]: sul_gishuud)
+
+    int count_surug_sul_gishuud = 0;
+    for (auto &surug_entry: sul_gishuud)
     {
-      // 0-с бага сөрөг сул гишүүнийг хайх
-      if (val.numerator < 0)
+      if (surug_entry.idx < rows)
       {
-        surug_sg_murnuud.push_back({index, false}); 
+        // 0-с бага сөрөг сул гишүүнийг хайх
+        if (surug_entry.value.numerator < 0)
+        {
+          count_surug_sul_gishuud++;
+          // surug_entry.isNeg = true; 
+
+          int count_eyreg_elementuud = 0;
+          int surug_row_idx = surug_entry.idx;
+          
+          for (int j = 0; j < valid_cols; j++)
+          {
+            if (A[surug_row_idx][j].numerator > 0)
+            {
+              // Нийт эерэг элементүүдийн тоог олох
+              count_eyreg_elementuud++;
+            }
+            else if(A[surug_row_idx][j].numerator < 0)
+            {
+              // Сөрөг сул гишүүний мөр дотор сөрөг элемент буй тул
+              // Хайлтын огторгуйд хадгалж байна.
+              search_space[surug_row_idx].push_back(j);
+            }
+          }
+          
+          if (count_eyreg_elementuud == valid_cols)
+          {
+            // Тухайн мөрөн дэхь бүх элементүүд эерэг
+            canditate_sul_gishuud.push_back({surug_row_idx, surug_entry.value, "surug", false});
+          }
+          else
+          {
+            // Тухайн мөрөнд сөрөг элэлемнт байгаа
+            canditate_sul_gishuud.push_back({surug_row_idx, surug_entry.value, "surug", true});
+          }
+        }
+      }
+      else if (surug_entry.value.numerator == 0)
+      {
+        // Хэрэв Бөхсөн буюу сул гишүүн нь 0 бол түүнийг
+        // Сонгогдох боломжтой сөрөг сул гишүүний векторт
+        // Хадгалахгүй байснаар нэмэлт тооцоолол хийх шаардлагагүй болох
+        // Буюу 0-ээс өөр бага симплекс харьцаатай мөрийг гол мөр болгоно.
+        cout << "Бөхсөн Тулгуур шийд олдов: " << surug_entry.idx 
+            << " " << surug_entry.value << endl;
       }
     }
 
-    if (surug_sg_murnuud.empty())
+    if (count_surug_sul_gishuud == 0)
     {
       // Ямар ч сөрөг сул гишүүн олдоогүй тул тулгуур шийд олдсон
+      cout << "Ямар ч сөрөг сул гишүүн олдоогүй тул тулгуур шийд олдсон!" << endl;
       tulguur_shiid_oldson = true;
       break;
     }
-    else
+
+    if (canditate_sul_gishuud.size() == 1 
+        && canditate_sul_gishuud[0].hasNegElem == false)
     {
-      // Сөрөг сул гишүүн олдсон тул үргэлжлүүлэх
-      // Гол баганыг сонгох сөрөн сул гишүүд олдсон мөрийн дугааруудаас сонгох
-      for (auto & surug_entry: surug_sg_murnuud)
-      {
-        // Тухайн сөрөг сул гишүүн байгаа мөрөнд орших элементүүд бүгд эерэг бол
-        // Хязгаарлалтын систем нийцгүй буюу ШИЙДГҮЙ байна.
-        int count_eyreg_elementuud = 0;
-        int surug_row_idx = surug_entry.index;
-
-        for (int j = 0; j < valid_cols; j++)
-        {
-          if (A[surug_row_idx][j].numerator > 0)
-          {
-            count_eyreg_elementuud++;
-          }
-        }
-
-        // Тухайн сөрөг мөрөнд элементүүд бүгд эерэг байсан
-        if (count_eyreg_elementuud == valid_cols - 1)
-        {
-          surug_entry.isAllPositive = true;
-        }
-      }
+      shiidgui_eseh = true;
+      break;
     }
+
+    printSulGishuudAll(canditate_sul_gishuud);
+
+    printSearchSpace(search_space);
 
     // small s.g logic is here
-    int s = -1;
     int r = -1;
+    int s = -1;
     
-    // Сөрөг сул гишүүний мөр дотор бүр 
-    // Боломжит сонгогдох сөрөг элэментүүд
-    // Алийг нь сонгосноос хамаарч өөр, өөр 
-    // Тулгуур шийд рүү хүргэх тул 
-    // Тулгуур шийдийн огторгуйг хадгалав.
-    vector<int> songoh;
+    Fraction min_surug_sul_gishuun = Fraction(__INT_MAX__, 1);
 
-    int min_surug_sg = INT_FAST16_MAX;
+    int candidate_row = -1;
 
-    for (auto & surug_entry: surug_sg_murnuud)
+    if (sul_gishuun_direction == "dooroos_deesh")
     {
-      if (surug_entry.isAllPositive == false)
+      if (!canditate_sul_gishuud.empty()) 
       {
-        int surug_row_idx = surug_entry.index;
-
-        for (int j = 0; j < valid_cols; j++)
-        {
-          if (A[surug_row_idx][j].numerator < 0)
-          {
-            // Гол багана сонгох
-            s = j;
-            break;
-          }
-        }
-      }
-    }
-
-    // Симплекс харьцаанууд
-    vector<tuple<int, Fraction>> simplex_ratios;
-
-    
-    for (size_t i = 0; i < valid_rows; i++)
-    {
-      if (sul_gishuud[i] == 0 )
-      {
-        // Бөхсөн Тулгуур шийд
+        surug_entry last_el = canditate_sul_gishuud.back();
+        candidate_row = last_el.idx;
       }
       else
       {
-        double simplex_ratio = sul_gishuud[i] / A[i][s];
+        cout << "Canditate sul gishuud hooson baina!" << endl;
+      }
+    }
+    else if (sul_gishuun_direction == "deerees_doosh")
+    {
+      if (!canditate_sul_gishuud.empty()) 
+      {
+        surug_entry first_el = canditate_sul_gishuud.front();
+        candidate_row = first_el.idx;
+      }
+      else
+      {
+        cout << "Canditate sul gishuud hooson baina!" << endl;
+      }
+    }
+    else if (sul_gishuun_direction == "min")
+    {
+      // Хамгийн цөөхөн болон хялбар хувиргалт хийх
+      for (auto &surug_entry: canditate_sul_gishuud)
+      {
+        if (min_surug_sul_gishuun > surug_entry.value)
+        {
+          min_surug_sul_gishuun = surug_entry.value;
+          candidate_row = surug_entry.idx;
+        }
+      }
+    }
+    else
+    {
+      cout << "Утгагүй сөрөг сул гишүүний мөр сонгох чиглэл байна!" << endl;
+    }
 
-        simplex_ratios.push_back(make_tuple(i, simplex_ratio));
+    // Сөрөг сул гишүүний мөрнөөс сөрөг элемент сонгох
+    for (auto &pair : search_space)
+    {
+      if (pair.first == candidate_row)
+      {
+        s = pair.second.front();
       }
     }
 
+    // Симплекс харьцаа
+    vector<simplex_ratio> simplex_ratios;
+
+    Fraction min_simplex_ratio = Fraction(__INT_MAX__, 1);
+
+    cout << "Симплекс харьцаанууд: " << endl;
+
+    for (int i = 0; i < valid_rows; i++)
+    { 
+      cout << A[candidate_row][i] << " ";
+      Fraction simplex_ratio = sul_gishuud[i].value / A[candidate_row][i];
+
+      if (simplex_ratio != Fraction(0, 1))
+      {
+        if (min_simplex_ratio > simplex_ratio)
+        {
+          min_simplex_ratio = simplex_ratio;
+          r = i;
+        }
+      }
+
+      cout << simplex_ratio << " ";
+    }
     
+    Fraction a_rs = A[r][s];
 
     if(a_rs.numerator != 0) 
     {
@@ -303,7 +440,7 @@ void tulguur_shiid(
       // cout << "original_vars array: " << original_vars[r] << endl;
 
       // Гол элемент (r, j) 
-      jordan_step(A, rows, cols, r, c);
+      jordan_step(A, rows, cols, r, s);
 
       cout << "  Хувиргалтын дараахь матриц: " << endl;
             
@@ -316,6 +453,23 @@ void tulguur_shiid(
     {
       cout << "Гол элемент 0 байна." << endl;
     }
+
+    for (int i = 0; i < rows; i++)
+    {
+      for (int j = 0; j < cols; j++)
+      {
+        if (j == cols - 1)
+        {
+          sul_gishuud[i].value = A[i][j];
+        }
+      }
+    }
+    count--;
+  }
+
+  if (shiidgui_eseh)
+  {
+    cout << "Хязгаарлалтын систем нийцгүй!" << endl;
   }
 }
 
@@ -324,7 +478,7 @@ int main()
   cout << "Мөрийн элементүүдийг зайгаар тусгаарлан оруулна уу." << endl;
   cout << "Хоосон мөр оруулбал дууссан гэж үзнэ." << endl;
 
-  vector< vector<Fraction> > fractionMatrix;
+  vector<vector<Fraction> > fractionMatrix;
   string line;
   int cols = -1;
 
@@ -340,28 +494,29 @@ int main()
       }
       
       vector<Fraction> row;
-
-      // Мөрөнд оруулсан элементүүдийг унших
-      stringstream ss(line);
-      string token;
-
-      while (ss >> token)
       {
-          // "/" тэмдэгтээр тусгаарлагдсан тоо бол бутархай тоо
-          size_t slashPos = token.find('/');
-          if (slashPos != string::npos)
-          {  
-              // Бутархай бүтцээр бутархай тоог унших
-              int num = stoi(token.substr(0, slashPos));
-              int den = stoi(token.substr(slashPos + 1));
-              row.push_back(Fraction(num, den));
-          }
-          else
-          {
-              // Бутархай бүтцээр бүхэл тоог унших
-              int num = stoi(token);
-              row.push_back(Fraction(num, 1));
-          }
+        // Мөрөнд оруулсан элементүүдийг унших
+        stringstream ss(line);
+        string token;
+
+        while (ss >> token)
+        {
+            // "/" тэмдэгтээр тусгаарлагдсан тоо бол бутархай тоо
+            size_t slashPos = token.find('/');
+            if (slashPos != string::npos)
+            {  
+                // Бутархай бүтцээр бутархай тоог унших
+                int num = stoi(token.substr(0, slashPos));
+                int den = stoi(token.substr(slashPos + 1));
+                row.push_back(Fraction(num, den));
+            }
+            else
+            {
+                // Бутархай бүтцээр бүхэл тоог унших
+                int num = stoi(token);
+                row.push_back(Fraction(num, 1));
+            }
+        }
       }
 
       // Эхний мөрөнд оруулсан элементүүдээс баганы тоог автоматаар олох
@@ -380,23 +535,25 @@ int main()
   cout << "Зорилгын функцийн утгийг зайгаар оруулна уу, F= " << endl;
 
   vector<Fraction> F;
-  getline(cin, line);
-  stringstream ss(line);
-  string token;
 
-  while (ss >> token)
+  if(getline(cin, line))
   {
-    size_t slashPos = token.find('/');
-    if (slashPos != string::npos)
+    stringstream ss(line);
+    string token;
+    while (ss >> token)
     {
-      int num = stoi(token.substr(0, slashPos));
-      int den = stoi(token.substr(slashPos + 1));
-      F.push_back(Fraction(num, den));
-    }
-    else
-    {
-      int num = stoi(token);
-      F.push_back(Fraction(num, 1));
+      size_t slashPos = token.find('/');
+      if (slashPos != string::npos)
+      {
+        int num = stoi(token.substr(0, slashPos));
+        int den = stoi(token.substr(slashPos + 1));
+        F.push_back(Fraction(num, den));
+      }
+      else
+      {
+        int num = stoi(token);
+        F.push_back(Fraction(num, 1));
+      }
     }
   }
   
@@ -412,37 +569,34 @@ int main()
         
 
   // Чөлөөт үл мэдэгдэгчдийг унших
+  cout << "Чөлөөт үл мэдэгдэгчдийг оруулна уу: " << endl;
   vector<string> free_vars;
-
-  string line;
-  getline(cin, line);
-
-  stringstream ss(line);
-  string token;
-
-  while (ss >> token)
+  if(getline(cin, line)) 
   {
-    free_vars.push_back(token);
+      stringstream ss(line);
+      string token;
+      while (ss >> token)
+      {
+          free_vars.push_back(token);
+      }
+  }
+
+  // Үндсэн үл мэдэгдэгчдийг унших
+  cout << "Үндсэн үл мэдэгдэгчдийг оруулна уу: " << endl;
+  vector<string> original_vars;
+  if(getline(cin, line)) 
+  {
+    stringstream ss(line);
+    string token;
+    while (ss >> token)
+    {
+        original_vars.push_back(token);
+    }
   }
 
   cout << "Чөлөөт үл мэдэгдэгчид: " << endl;
   for (auto &val : free_vars) cout << val << " ";
   cout << endl;
-
-  // Үндсэн үл мэдэгдэгчдийг унших
-
-  vector<string> original_vars;
-
-  string line;
-  getline(cin, line);
-
-  stringstream ss(line);
-  string token;
-
-  while (ss >> token)
-  {
-    original_vars.push_back(token);
-  }
 
   cout << "Үндсэн үл мэдэгдэгчид : " << endl;
   for (auto &val : original_vars) cout << val << " ";
@@ -450,9 +604,22 @@ int main()
 
   // 2-р хувиргалтанд бэлдэж элементүүдийг сөрөг болгох
 
-  Fraction **A = new Fraction*[rows];
+  // Зорилгын функцыг нэмэх
+  fractionMatrix.push_back(F);
+  
+  for (auto &val : fractionMatrix)
+  {
+    for (auto &elem : val)
+    {
+      cout << elem << " ";
+    }
+    cout << endl;
+  }
 
-  vector<tuple<int, Fraction>> sul_gishuud;
+  rows++;
+
+  vector<sul_gishuun_entry> sul_gishuud;
+  Fraction **A = new Fraction*[rows];
 
   for (int i = 0; i < rows; i++)
   {
@@ -469,7 +636,7 @@ int main()
             fractionMatrix[i][j].numerator, 
             fractionMatrix[i][j].denominator);
           
-          sul_gishuud.push_back(make_tuple(i, A[i][j]));
+          sul_gishuud.push_back({i, A[i][j]});
         }
         else if(i == rows - 1)
         {
@@ -488,9 +655,9 @@ int main()
   }
 
   cout << "Сул гишүүд : " << endl;
-  for (const auto &[index, val_frac] : sul_gishuud)
+  for (const auto &surug_entry : sul_gishuud)
   {
-    cout << index << "-р мөр, сул гишүүний утга: " << val_frac << endl;
+    cout << surug_entry.idx << "-р мөр, сул гишүүний утга: " << surug_entry.value << endl;
   }
   
   cout << endl;
@@ -499,12 +666,15 @@ int main()
 
   printMatrix(A, rows, cols);
 
+  string sul_gishuun_direction = "min";
+
   // Гаусс-Жорданы 2-р хувиргалт
   tulguur_shiid(
       A, rows, cols, 
       free_vars,
       original_vars,
-      sul_gishuud
+      sul_gishuud,
+      sul_gishuun_direction
   );
 
   // Санах ойгоо цэвэрлэх
