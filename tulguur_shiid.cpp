@@ -6,6 +6,7 @@
 #include <string>
 #include <iomanip>
 #include <unordered_map>
+#include <algorithm>
 using namespace std;
 
 struct sul_gishuun_entry {
@@ -157,6 +158,47 @@ void printSystem(
     cout << endl;
 }
 
+void remove_column(
+  Fraction **&A,
+  int rows,
+  int &cols,
+  int s
+)
+{
+  Fraction** newA = new Fraction*[rows];
+
+  for (int i = 0; i < rows; i++)
+  {
+    newA[i] = new Fraction[cols - 1];
+  }
+
+  for (int i = 0; i < rows; i++)
+  {
+    for (int j = 0, k = 0; j < cols; j++)
+    {
+      if (j != s)
+      {
+        newA[i][k++] = A[i][j];
+      }
+    }
+  }
+
+  
+  for (size_t i = 0; i < (size_t)rows; i++)
+  {
+    delete[] A[i];
+
+  }
+  delete [] A;
+  
+  A = newA;
+  
+  cols--;
+  printMatrix(newA, rows, cols);
+
+  cout << "deleted" << endl;
+}
+
 void jordan_step(
     Fraction **A, 
     int rows, 
@@ -257,6 +299,136 @@ void tulguur_shiid(
   bool tulguur_shiid_oldson = false;
   // bool shiidgui_eseh = false;
 
+  bool simplex_husnegt = false;
+  while (!simplex_husnegt)
+  {
+    int teg_undsen_elementuud = 0;
+    vector<int> teg_undsen_muruud;
+
+    cout << "orig: " << endl;
+    for (auto & var : original_vars)
+    {
+      cout <<var << " ";
+    }
+    cout << endl;
+
+    for (int i = 0; i < (int)original_vars.size(); i ++)
+    {
+      if (original_vars[i] == "0")
+      {
+        teg_undsen_elementuud++;
+        teg_undsen_muruud.push_back(i);
+      }
+    }
+
+    vector<int> teg_songoson_muruud;
+
+    if (teg_undsen_elementuud > 0)
+    {
+
+      while (teg_undsen_elementuud != 0)
+      {
+        // cout << "(anh) mur bagana: " << rows << " " << cols << endl;
+
+        int r = teg_undsen_muruud.front();
+
+        cout << "Teg mur: " << endl;
+        cout << r << endl;
+        Fraction min_col_elem = Fraction(__INT_MAX__, 1);
+
+        int s = -1;
+        for (int j = 0; j < valid_cols; j++)
+        {
+          if (A[r][j] != 0)
+          {
+            if (A[r][j] == 1 || A[r][j] == -1)
+            {
+              s = j;
+              break;
+            }
+            else
+            {
+              if (min_col_elem > A[r][j])
+              {
+                min_col_elem = A[r][j];
+                s = j;
+              }
+            }
+          }
+        }
+
+        cout << "Gol element: " << A[r][s] << endl;
+
+        // cout << "Teg solih bagana: " << endl;
+        // cout << s << endl;
+      
+        jordan_step(A, rows, cols, r ,s);
+
+        // delete teg bagana
+
+        string temp_elem;
+
+        temp_elem = free_vars[s];
+        free_vars[s] = original_vars[r];
+        original_vars[r] = temp_elem;
+        
+        // cout << "ustgah" << endl;
+        remove_column(A, rows, cols, s);
+        free_vars.erase(remove(free_vars.begin(), free_vars.end(), "0"), free_vars.end());
+        original_vars.erase(remove(original_vars.begin(), original_vars.end(), "0"), original_vars.end());
+        // cout << "ustgah2" << endl;
+
+        for (int i = 0; i < valid_rows; i++)
+        {
+          for (int j = 0; j < cols; j++)
+          {
+            if (j == cols - 1)
+            {
+              sul_gishuud[i].value = A[i][j];
+            }
+          }
+        }
+
+        cout << "Хувиргалтын дараахь Сул гишүүд : " << endl;
+        for (const auto &surug_entry : sul_gishuud)
+        {
+          cout << surug_entry.idx + 1 << "-р мөр, сул гишүүний утга: " << surug_entry.value << endl;
+        }
+
+        for (int i = 0; i < rows; i++)
+        {
+          for (int j = 0; j < cols; j++)
+          {
+            cout << A[i][j] << " ";
+          }
+          cout << endl;
+        }
+
+        // cout << "mur bagana: " << rows << " " << cols << endl;
+
+        // printMatrix(A, rows, cols);
+
+        // cout << "Frree vars: " << endl;
+        // for (auto & var: free_vars)
+        // {
+        //   cout << var << " ";
+        // }
+        cout << endl;
+        printSystem(A, original_vars, free_vars, rows, cols);
+
+        teg_undsen_elementuud--;
+      }
+    }
+    cout << "Teg element" << teg_undsen_elementuud << endl;
+    if (teg_undsen_elementuud == 0)
+    {
+      simplex_husnegt = true;
+      break;
+    }
+  }
+
+  if (simplex_husnegt)
+  {
   // int count = 4;
   while (!tulguur_shiid_oldson)
   {
@@ -487,7 +659,35 @@ void tulguur_shiid(
       free_vars[s] = original_vars[r];
       original_vars[r] = temp_elem;
 
-      // Гол элемент (r, j) 
+      // 0 үндсэн үл мэдэгдэгч нар нь 1, 1 ээрээ
+      // хувиргалт хийж буй харгалзах чөлөөт үл
+      // мэдэгдэгчидтэй солигдох тул
+      // хувиргалт бүрт 0-баганыг хасах хувиргалт хийж болно
+      int teg_bagana = -1;
+      for (int j = 0; j < (int)free_vars.size(); j++)
+      {
+        if (free_vars[j] == "0")
+        {
+          teg_bagana = j;
+        }
+      }
+
+      if (teg_bagana != -1)
+      {
+        cout << "0 мөр хасах" << endl;
+        remove_column(A, rows, cols, teg_bagana);
+      }
+
+      // 0-баганыг арилгах
+      // for (int i = 0; i < valid_rows; i++)
+      // {
+      //   for (int j = 0; j < valid_cols; j++)
+      //   {
+      //     if (teg_bagana = j)
+      //       delete A[i][j];
+      //   }
+      // }
+      // Гол элемент (r, j)     
       jordan_step(A, rows, cols, r, s);
 
       cout << "  Хувиргалтын дараахь матриц: " << endl;
@@ -518,7 +718,9 @@ void tulguur_shiid(
     {
       cout << surug_entry.idx + 1 << "-р мөр, сул гишүүний утга: " << surug_entry.value << endl;
     }
+  
   }
+}
 }
 
 int main() 
@@ -689,13 +891,13 @@ int main()
           
           sul_gishuud.push_back({i, A[i][j]});
         }
-        else if(i == rows - 1)
-        {
-          // Зорилгын функцын мөор
-          A[i][j] = Fraction(
-            fractionMatrix[i][j].numerator, 
-            fractionMatrix[i][j].denominator);
-        }
+        // else if(i == rows - 1)
+        // {
+        //   // Зорилгын функцын мөор
+        //   A[i][j] = Fraction(
+        //     fractionMatrix[i][j].numerator, 
+        //     fractionMatrix[i][j].denominator);
+        // }
         else
         {
           A[i][j] = Fraction(

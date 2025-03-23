@@ -206,6 +206,10 @@ void gauss_jordan_2nd(
         A, b_string, coeff_array,
         rows, cols
     );
+
+    cout << endl;
+
+    printMatrix(A, rows, cols);
   }
   else
   {
