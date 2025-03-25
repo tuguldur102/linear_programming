@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <unordered_map>
 #include <algorithm>
+#include <map>
 using namespace std;
 
 struct sul_gishuun_entry {
@@ -41,7 +42,6 @@ void printSulGishuudAll(
   vector<surug_entry> sul_gishuud
   )
 {
-  cout << endl;
   cout << "Сөрөг сул гишүүд: " << endl;
 
   for (const auto & entry : sul_gishuud)
@@ -51,7 +51,6 @@ void printSulGishuudAll(
           << "Status: " << entry.status << " "
           << "Сөрөг элементтэй эсэх: " << entry.hasNegElem << endl;
   }
-  cout << endl;
 }
 
 void printSulGishuud(
@@ -138,18 +137,9 @@ void printSystem(
 
     // Толгой хэсгийн мөрийг хэвлэх
     cout << center("", COL_WIDTH) << " || ";
-    int j = 0;
     for (auto &coeff: free_vars)
     {
-        if (j != cols - 1)
-        {
-          cout << "-"<< center(coeff, COL_WIDTH - 1) << " || ";
-        }
-        else
-        {
-          cout << center(coeff, COL_WIDTH + 1) << " || ";
-        }
-        j++;
+        cout << center(coeff, COL_WIDTH) << " || ";
     }
 
     cout << endl;
@@ -205,9 +195,9 @@ void remove_column(
   A = newA;
   
   cols--;
-  // printMatrix(newA, rows, cols);
+  printMatrix(newA, rows, cols);
 
-  // cout << "deleted" << endl;
+  cout << "deleted" << endl;
 }
 
 void jordan_step(
@@ -232,7 +222,6 @@ void jordan_step(
 
     Fraction a_rs = A_init[r][s];
     cout << "Гол элемент: (" << r + 1 << " мөр," << s + 1<< " багана) = " << a_rs << endl;
-    cout << endl;
 
     // ГОЛ ЭЛЕМЕНТ олох: 
     // b_rs = A[r][s] = 1 / -a_rs
@@ -310,22 +299,19 @@ void tulguur_shiid(
 
   bool tulguur_shiid_oldson = false;
   // bool shiidgui_eseh = false;
-  
-  
+
   bool simplex_husnegt = false;
   while (!simplex_husnegt)
   {
-    cout << endl << "Симплекс хүснэгт хараахан зохиогдоогүй байна!" << endl;
-
     int teg_undsen_elementuud = 0;
     vector<int> teg_undsen_muruud;
 
-    // cout << "orig: " << endl;
-    // for (auto & var : original_vars)
-    // {
-    //   cout <<var << " ";
-    // }
-    // cout << endl;
+    cout << "orig: " << endl;
+    for (auto & var : original_vars)
+    {
+      cout <<var << " ";
+    }
+    cout << endl;
 
     for (int i = 0; i < (int)original_vars.size(); i ++)
     {
@@ -348,18 +334,17 @@ void tulguur_shiid(
         int r = teg_undsen_muruud.back();
         teg_undsen_muruud.pop_back();
 
-        // cout << "teg undsen moruud: " <<endl;
-        // for (auto &teg: teg_undsen_muruud)
-        // {
-        //   cout << teg << " ";
-        // }
-        // cout << endl;
+        cout << "teg undsen moruud: " <<endl;
+        for (auto &teg: teg_undsen_muruud)
+        {
+          cout << teg << " ";
+        }
+        cout << endl;
 
         // Гаргасан элементийг устгах
         
-        // cout << "Teg mur: " << endl;
-        // cout << r << endl;
-
+        cout << "Teg mur: " << endl;
+        cout << r << endl;
         Fraction min_col_elem = Fraction(__INT_MAX__, 1);
         
 
@@ -386,7 +371,7 @@ void tulguur_shiid(
           }
         }
 
-        cout << "Гол элемент: " << A[r][s] << endl;
+        cout << "Gol element: " << A[r][s] << endl;
 
         // cout << "Teg solih bagana: " << endl;
         // cout << s << endl;
@@ -408,11 +393,11 @@ void tulguur_shiid(
         // original_vars.erase(remove(original_vars.begin(), original_vars.end(), "0"), original_vars.end());
         // cout << "ustgah2" << endl;
         
-        // cout << "Original vars: " << endl;
-        // for (auto &var: original_vars)
-        // {
-        //   cout << var << " ";
-        // }
+        cout << "Original vars: " << endl;
+        for (auto &var: original_vars)
+        {
+          cout << var << " ";
+        }
 
         for (int i = 0; i < valid_rows; i++)
         {
@@ -431,14 +416,14 @@ void tulguur_shiid(
           cout << surug_entry.idx + 1 << "-р мөр, сул гишүүний утга: " << surug_entry.value << endl;
         }
 
-        // for (int i = 0; i < rows; i++)
-        // {
-        //   for (int j = 0; j < cols; j++)
-        //   {
-        //     cout << A[i][j] << " ";
-        //   }
-        //   cout << endl;
-        // }
+        for (int i = 0; i < rows; i++)
+        {
+          for (int j = 0; j < cols; j++)
+          {
+            cout << A[i][j] << " ";
+          }
+          cout << endl;
+        }
 
         // cout << "mur bagana: " << rows << " " << cols << endl;
 
@@ -455,7 +440,7 @@ void tulguur_shiid(
         teg_undsen_elementuud--;
       }
     }
-    // cout << "Teg element" << teg_undsen_elementuud << endl;
+    cout << "Teg element" << teg_undsen_elementuud << endl;
     if (teg_undsen_elementuud == 0)
     {
       simplex_husnegt = true;
@@ -533,8 +518,8 @@ void tulguur_shiid(
       int count_surug_sul_gishuud = 0;
         for (auto &surug_entry: sul_gishuud)
         {
-          // cout << "Surug!" << endl;
-          // cout << surug_entry.value << endl;
+          cout << "Surug!" << endl;
+          cout << surug_entry.value << endl;
           if (surug_entry.idx < rows)
           {
             // 0-с бага сөрөг сул гишүүнийг хайх
@@ -664,10 +649,9 @@ void tulguur_shiid(
 
       Fraction min_simplex_ratio = Fraction(__INT_MAX__, 1);
 
-      cout << endl;
-      cout << "Эерэг Симплекс харьцаанууд: " << endl;
+      cout << "Симплекс харьцаанууд: " << endl;
 
-      // cout << "candidate row: " << candidate_row << endl;
+      cout << "candidate row: " << candidate_row << endl;
 
       for (int i = 0; i < valid_rows; i++)
       { 
@@ -690,7 +674,6 @@ void tulguur_shiid(
         cout << simplex_ratio << " ";
       }
 
-      cout << endl;
       cout << "Хамгийн бага симплекс харьцаа: " << endl;
       cout << min_simplex_ratio << endl;
       
@@ -780,8 +763,11 @@ int main()
 {
   cout << "Мөрийн элементүүдийг зайгаар тусгаарлан оруулна уу." << endl;
   cout << "Хоосон мөр оруулбал дууссан гэж үзнэ." << endl;
-
+  
   vector<vector<Fraction> > fractionMatrix;
+  vector<string> initial_relations;
+  vector<string> final_relations;
+
   string line;
   int cols = -1;
 
@@ -797,10 +783,17 @@ int main()
       }
       
       vector<Fraction> row;
+      string relation;
       {
         // Мөрөнд оруулсан элементүүдийг унших
         stringstream ss(line);
         string token;
+        
+        if (token == "=" || token == "<=" || token == ">=")
+        {
+          relation = token;
+          break;
+        }
 
         while (ss >> token)
         {
@@ -832,7 +825,17 @@ int main()
           cerr << "Нийцгүй баганы тоотой байна!" << endl;
           return 1;
       }
-      fractionMatrix.push_back(row);
+
+    fractionMatrix.push_back(row);
+    initial_relations.push_back(relation);
+    final_relations.push_back(relation);
+  }
+
+  cout << "Relations: " << endl;
+  for (int i = 0; i < (int)initial_relations.size(); i++)
+  {
+    cout << initial_relations[i] << " ";
+    cout << final_relations[i] << " ";
   }
 
   cout << "Зорилгын функцийн утгийг зайгаар оруулна уу, F= " << endl;
@@ -871,6 +874,32 @@ int main()
   // negative = (input != 0);
         
 
+  /* fractionMatrix-г Хязгаарлалтын систем болгон
+  уншиж түүнээс тэгшитгэл болон тэнцэтгэл бишийн
+  системүүдийг хувиргах*/
+
+  // Хувьсагч бүрийн давтамжийг олох энэ нь
+  // тухайн системд ганц байна уу, үгүй юу гэдэгт хэрэгтэй
+
+  map<int, int> var_freq;
+
+  for (int j = 0; j < cols - 1; j++)
+  {
+    for (int i = 0; i < rows; i++)
+    {
+      if (fractionMatrix[i][j].numerator != 0)
+      {
+        var_freq[j]++;
+      }
+    }
+  }
+
+  cout << "Freq vars: " << endl;
+  for (auto &val : var_freq)
+  {
+    cout << "x" << val.first + 1 << " : " << val.second;
+    cout << endl;
+  }
   // Чөлөөт үл мэдэгдэгчдийг унших
   cout << "Чөлөөт үл мэдэгдэгчдийг оруулна уу: " << endl;
   vector<string> free_vars;
@@ -902,25 +931,25 @@ int main()
 
   cout << "Чөлөөт үл мэдэгдэгчид: " << endl;
   for (auto &val : free_vars) cout << val << " ";
-  cout << endl << endl;
+  cout << endl;
 
   cout << "Үндсэн үл мэдэгдэгчид : " << endl;
   for (auto &val : original_vars) cout << val << " ";
-  cout << endl << endl;
+  cout << endl;
 
   // 2-р хувиргалтанд бэлдэж элементүүдийг сөрөг болгох
 
   // Зорилгын функцыг нэмэх
   fractionMatrix.push_back(F);
   
-  // for (auto &val : fractionMatrix)
-  // {
-  //   for (auto &elem : val)
-  //   {
-  //     cout << elem << " ";
-  //   }
-  //   cout << endl;
-  // }
+  for (auto &val : fractionMatrix)
+  {
+    for (auto &elem : val)
+    {
+      cout << elem << " ";
+    }
+    cout << endl;
+  }
 
   rows++;
 
@@ -953,11 +982,8 @@ int main()
         // }
         else
         {
-          // A[i][j] = Fraction(
-          //   -fractionMatrix[i][j].numerator, 
-          //   fractionMatrix[i][j].denominator);
           A[i][j] = Fraction(
-            fractionMatrix[i][j].numerator, 
+            -fractionMatrix[i][j].numerator, 
             fractionMatrix[i][j].denominator);
         }
       }
