@@ -295,7 +295,8 @@ void tulguur_shiid(
     vector<string> &free_vars,
     vector<string> &original_vars,
     vector<sul_gishuun_entry> &sul_gishuud,
-    string sul_gishuun_direction
+    string sul_gishuun_direction,
+    string objective_function = "min"
     ) 
 {
   // Анхны систем
@@ -474,6 +475,8 @@ void tulguur_shiid(
   // }
   // cout << endl;
 
+  bool onovchtoi_shiid_oldson = false;
+
   if (simplex_husnegt)
   {
     // int count = 4;
@@ -485,7 +488,52 @@ void tulguur_shiid(
       unordered_map<int, vector<int>> search_space;
       vector<surug_entry> canditate_sul_gishuud;
       // Сөрөг сул гишүүн байгаа мөрийн дугааруудыг хадгалах
+
+      // Сөрөг сул гишүүдийг nested dictionary буюу vector<surug_entry> бүтцээр
+      // хадгалсан ба эхний элемент нь мөрийн дугаарыг болон удаахь нь
+      // Тухайн мөрөнд харгалзах сул гишүүний утгыг хадгална
+      // Дараагаар сонгогдох боломжтой утгууд хадгалагдана
+      // Иймд харгалзах мөрийн дугаарыг хадгалахад хялбар болно.
+
+      // if (sul_gishuud.size() == 1)
+      // {
+      //   sul_gishuun_entry single_elem = sul_gishuud.back();
+
+      //   int count_surug_sul_gishuud = 0;
+      //   if (single_elem.idx < rows)
+      //   {
+      //     // 0-с бага сөрөг сул гишүүнийг хайх
+      //     if (single_elem.value.numerator < 0)
+      //     {
+      //       count_surug_sul_gishuud++;
+      //       // surug_entry.isNeg = true; 
+
+      //       int count_eyreg_elementuud = 0;
+      //       int surug_row_idx = single_elem.idx;
+            
+      //       for (int j = 0; j < valid_cols; j++)
+      //       {
+      //         if (A[surug_row_idx][j].numerator > 0)
+      //         {
+      //           // Нийт эерэг элементүүдийн тоог олох
+      //           count_eyreg_elementuud++;
+      //         }
+      //       }
+      //     }
+            
+      //     if (count_surug_sul_gishuud == 0)
+      //     {
+      //       // Ямар ч сөрөг сул гишүүн олдоогүй тул тулгуур шийд олдсон
+      //       cout << "Ямар ч сөрөг сул гишүүн олдоогүй тул тулгуур шийд олдсон!" << endl;
+      //       tulguur_shiid_oldson = true;
+      //       break;
+      //     }
+      //   }
+      // }
+      // else
+      // {
       
+
       int count_surug_sul_gishuud = 0;
         for (auto &surug_entry: sul_gishuud)
         {
@@ -728,6 +776,159 @@ void tulguur_shiid(
         cout << surug_entry.idx + 1 << "-р мөр, сул гишүүний утга: " << surug_entry.value << endl;
       }
     
+    }
+
+    while (!onovchtoi_shiid_oldson)
+    {
+      cout << "Onovchtoi shiid ehlej baina: " << endl;
+
+      Fraction obj_func_quantifier = 1;
+      if (objective_function == "max")
+      {
+        obj_func_quantifier = -1;
+      }
+
+      Fraction eyreg_f_coeff;
+      
+      // Gol mur bolon bagana
+      int s = -1;
+      int r = -1;
+
+      // Ardaas n haij eyreg F_coeff-g oloh (min uyd); max uyd quantifier -> -1 bolgoh
+      // Uchir n F_max = -1 * F_min
+      int surug_f_coeff = 0;
+      for (int j = valid_cols; j > 0; j++)
+      {
+        // Sul gisuunii baganiin elementiig tootsohgui
+        Fraction f_coeff = obj_func_quantifier * A[rows - 1][j];
+
+        if (f_coeff > 0)
+        {
+          eyreg_f_coeff = A[rows - 1][j];
+          s = j;
+          break;
+        }
+        else
+        {
+          surug_f_coeff++;
+        }
+      }
+
+      if (surug_f_coeff == valid_cols)
+      {
+        if (objective_function == "min")
+        {
+          cout << "Зорилгын функц доороосоо зааглагдаагүй!" << endl;
+        }
+        else
+        {
+          cout << "Зорилгын функц дээрээсээ зааглагдаагүй!" << endl;
+        }
+        onovchtoi_shiid_oldson = true;
+        break;
+      }
+      
+      if (surug_f_coeff == 0)
+      {
+        cout << "Оновчтой шийд олдсон!" << endl;
+        onovchtoi_shiid_oldson = true;
+        break;        
+      }
+
+      cout << endl;
+      cout << "s: " << s << endl;
+
+      // Симплекс харьцаа
+      vector<simplex_ratio> simplex_ratios;
+
+      Fraction min_simplex_ratio = Fraction(__INT_MAX__, 1);
+
+      cout << endl;
+      cout << "Эерэг Симплекс харьцаанууд: " << endl;
+
+      // cout << "candidate row: " << candidate_row << endl;
+
+      // We'll store which rows tied on this min_ratio:
+    static const Fraction ZERO(0,1);
+    Fraction min_ratio = Fraction(__INT_MAX__, 1);
+    int candidate_r = -1;
+
+    std::vector<int> tied_rows;
+
+    // 1) First pass: compute ratio for each row
+    for (int i = 0; i < valid_rows; i++) {
+        // Denominator: A[i][s]
+        Fraction denom = A[i][s];
+
+        // Skip if denominator == 0, ratio not valid for pivot
+        if (denom == ZERO) {
+            // ratio is effectively infinite or undefined => skip
+            continue;
+        }
+
+        // Compute ratio
+        Fraction ratio = ZERO;
+
+        // If the row's RHS (sul_gishuud[i].value) is 0 and denom > 0 => ratio = 0
+        // else ratio = (sul_gishuud[i].value) / denom
+        if (sul_gishuud[i].value == ZERO && denom > ZERO) {
+            ratio = ZERO;  // 0 / positive => 0
+        } else {
+            ratio = sul_gishuud[i].value / denom;
+        }
+
+        // We consider the row valid if ratio >= 0
+        // (If your logic requires strictly > 0, change >= to >)
+        if (ratio > ZERO || ratio == ZERO) {
+            // Compare with current minimum
+            if (ratio < min_ratio) {
+                // Found a smaller ratio
+                min_ratio   = ratio;
+                candidate_r = i;
+                tied_rows.clear();
+                tied_rows.push_back(i);
+            }
+            else if (ratio == min_ratio) {
+                // It's tied with the current minimum
+                tied_rows.push_back(i);
+            }
+        }
+    }
+
+    // 2) Now handle tie-breaking
+    if (tied_rows.empty()) {
+        // Means no valid pivot row was found
+        candidate_r = -1;
+        std::cout << "No valid pivot row found.\n";
+    }
+    else if (tied_rows.size() == 1) {
+        // Exactly one row with the min ratio
+        candidate_r = tied_rows[0];
+    }
+    else {
+        // We have more than one row that shares the same min_ratio
+        // For a simple tie-break: choose the row with the smallest index
+        int chosen = tied_rows[0];
+        for (int j = 1; j < (int) tied_rows.size(); j++) {
+            if (tied_rows[j] < chosen) {
+                chosen = tied_rows[j];
+            }
+        }
+        candidate_r = chosen;
+    }
+
+    // At this point, candidate_r is your pivot row
+    if (candidate_r >= 0) {
+        std::cout << "Pivot row chosen: " << candidate_r 
+                  << " with ratio = " << min_ratio.numerator << "/" << min_ratio.denominator << "\n";
+    }
+
+      cout << endl;
+      cout << "Хамгийн бага симплекс харьцаа: " << endl;
+      cout << min_simplex_ratio << endl;
+      
+
+      printMatrix(A, rows, cols);
     }
   }
 }
