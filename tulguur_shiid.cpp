@@ -364,25 +364,25 @@ void tulguur_shiid(
         
 
         int s = -1;
-        for (int j = 0; j < valid_cols; j++)
+        for (int j = valid_cols - 1; j >= 0; j--)
         {
           if (A[r][j] != 0)
           {
-            // s = j;
-            // break;
-            if (A[r][j] == 1 || A[r][j] == -1)
-            {
-              s = j;
-              break;
-            }
-            else
-            {
-              if (min_col_elem > A[r][j])
-              {
-                min_col_elem = A[r][j];
-                s = j;
-              }
-            }
+            s = j;
+            break;
+            // if (A[r][j] == 1 || A[r][j] == -1)
+            // {
+            //   s = j;
+            //   break;
+            // }
+            // else
+            // {
+            //   if (min_col_elem > A[r][j])
+            //   {
+            //     min_col_elem = A[r][j];
+            //     s = j;
+            //   }
+            // }
           }
         }
 
