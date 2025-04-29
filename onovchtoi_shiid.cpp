@@ -231,6 +231,7 @@ void jordan_step(
     }
 
     Fraction a_rs = A_init[r][s];
+    cout << endl;
     cout << "Гол элемент: (" << r + 1 << " мөр," << s + 1<< " багана) = " << a_rs << endl;
     cout << endl;
 
@@ -274,6 +275,7 @@ void jordan_step(
                     // A_init[i][s]*A_init[r][j]
                     Fraction term2 = A_init[i][s] * A_init[r][j];
 
+                    // cout << "Term 1: " << term1 << " " << "Term 2: " << term2 << endl;
                     A[i][j] = (term1 - term2) / a_rs;
                 }
             }
@@ -288,7 +290,21 @@ void jordan_step(
     delete[] A_init;
 }
 
-void tulguur_shiid(
+int extractIndex(string &var) 
+{
+  if (var.size() < 2 || var[0] != 'x') 
+  {
+      return -1; 
+  }
+  try 
+  {
+      return std::stoi(var.substr(1));
+  } catch (...) {
+      return -1;
+  }
+}
+
+void onovchtoi_shiid(
     Fraction **A, 
     int rows, 
     int cols, 
@@ -316,8 +332,6 @@ void tulguur_shiid(
   bool simplex_husnegt = false;
   while (!simplex_husnegt)
   {
-    cout << endl << "Симплекс хүснэгт хараахан зохиогдоогүй байна!" << endl;
-
     int teg_undsen_elementuud = 0;
     vector<int> teg_undsen_muruud;
 
@@ -462,6 +476,10 @@ void tulguur_shiid(
       simplex_husnegt = true;
       break;
     }
+    else
+    {
+      cout << endl << "Симплекс хүснэгт хараахан зохиогдоогүй байна!" << endl;
+    }
   }
 
   // F-н мөрийг хасах
@@ -480,6 +498,7 @@ void tulguur_shiid(
   if (simplex_husnegt)
   {
     // int count = 4;
+    /*
     while (!tulguur_shiid_oldson)
     {
       // Сөрөг сул гишүүдийг хайх
@@ -673,7 +692,7 @@ void tulguur_shiid(
 
       // cout << "candidate row: " << candidate_row << endl;
 
-      for (int i = 0; i < valid_rows; i++)
+      for (int i = valid_rows - 1; i >= 0; i--)
       { 
         Fraction simplex_ratio;
         if (A[i][s].numerator != 0)
@@ -775,20 +794,32 @@ void tulguur_shiid(
       {
         cout << surug_entry.idx + 1 << "-р мөр, сул гишүүний утга: " << surug_entry.value << endl;
       }
-    
     }
+    */
 
+    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+    cout << "Оновчтой шийдийн алгоритм эхлэж байна! " << endl;
+    cout << endl;
+
+    bool zaaglagdaagui = true;
     while (!onovchtoi_shiid_oldson)
     {
-      cout << "Onovchtoi shiid ehlej baina: " << endl;
+      // Fraction obj_func_quantifier = 1;
+      // if (objective_function == "max")
+      // {
+      //   obj_func_quantifier = -1;
+      // }
+      // else if (objective_function == "min")
+      // {
+      //   obj_func_quantifier = 1;
+      // }
+      // else
+      // {
+      //   cout << "Зорилгын функц буруу байна!" << endl;
+      //   break;
+      // }
 
-      Fraction obj_func_quantifier = 1;
-      if (objective_function == "max")
-      {
-        obj_func_quantifier = -1;
-      }
-
-      Fraction eyreg_f_coeff;
+      Fraction chosen_f_coeff;
       
       // Gol mur bolon bagana
       int s = -1;
@@ -796,139 +827,355 @@ void tulguur_shiid(
 
       // Ardaas n haij eyreg F_coeff-g oloh (min uyd); max uyd quantifier -> -1 bolgoh
       // Uchir n F_max = -1 * F_min
-      int surug_f_coeff = 0;
-      for (int j = valid_cols; j > 0; j++)
+      int surug_f_coeff_min = 0;
+      int eyreg_f_coeff_max = 0;
+
+      cout << "Зорилгын функцын коэффициент: " << endl;
+
+      if (objective_function == "min")
+      {
+        for (int j = valid_cols - 1; j >= 0; j--)
+        {
+          // Sul gisuunii baganiin elementiig tootsohgui
+          Fraction f_coeff = A[rows - 1][j];
+
+          cout << A[rows - 1][j] << " ";
+
+          if (f_coeff > 0 && s == -1)
+          {
+            chosen_f_coeff = A[rows - 1][j];
+            s = j;
+          }
+
+          if (f_coeff < 0 || f_coeff == 0)
+          {
+            surug_f_coeff_min++;
+          }
+        }
+      }
+      else if (objective_function == "max")
+      {
+        for (int j = valid_cols - 1; j >= 0; j--)
       {
         // Sul gisuunii baganiin elementiig tootsohgui
-        Fraction f_coeff = obj_func_quantifier * A[rows - 1][j];
+        Fraction f_coeff = A[rows - 1][j];
 
-        if (f_coeff > 0)
+        cout << A[rows - 1][j] << " ";
+
+        if (f_coeff < 0 && s == -1)
         {
-          eyreg_f_coeff = A[rows - 1][j];
+          chosen_f_coeff = A[rows - 1][j];
           s = j;
-          break;
         }
-        else
+
+        if (f_coeff > 0 || f_coeff == 0)
         {
-          surug_f_coeff++;
+          eyreg_f_coeff_max++;
         }
       }
+      }
+      // for (int j = valid_cols - 1; j >= 0; j--)
+      // {
+      //   // Sul gisuunii baganiin elementiig tootsohgui
+      //   Fraction f_coeff = obj_func_quantifier * A[rows - 1][j];
 
-      if (surug_f_coeff == valid_cols)
+      //   cout << A[rows - 1][j] << " ";
+
+      //   if (f_coeff > 0 && s == -1)
+      //   {
+      //     eyreg_f_coeff = A[rows - 1][j];
+      //     s = j;
+      //   }
+
+      //   if (f_coeff < 0 || f_coeff == 0)
+      //   {
+      //     surug_f_coeff++;
+      //   }
+      // }
+
+      // cout << "Valid cols" << valid_cols << endl;
+      if (objective_function == "min")
       {
-        if (objective_function == "min")
+        if (surug_f_coeff_min == valid_cols)
         {
-          cout << "Зорилгын функц доороосоо зааглагдаагүй!" << endl;
+          cout << endl;
+          cout << "Оновчтой шийд олдсон!" << endl;
+          onovchtoi_shiid_oldson = true;
+          break;  
         }
-        else
+      }
+      else if (objective_function == "max")
+      {
+        if (eyreg_f_coeff_max == valid_cols)
         {
-          cout << "Зорилгын функц дээрээсээ зааглагдаагүй!" << endl;
+          cout << endl;
+          cout << "Оновчтой шийд олдсон!" << endl;
+          onovchtoi_shiid_oldson = true;
+          break; 
         }
-        onovchtoi_shiid_oldson = true;
-        break;
       }
       
-      if (surug_f_coeff == 0)
-      {
-        cout << "Оновчтой шийд олдсон!" << endl;
-        onovchtoi_shiid_oldson = true;
-        break;        
-      }
-
       cout << endl;
-      cout << "s: " << s << endl;
+      cout << "Гол багана: " << s << endl;
+      cout << endl;
 
       // Симплекс харьцаа
       vector<simplex_ratio> simplex_ratios;
 
-      Fraction min_simplex_ratio = Fraction(__INT_MAX__, 1);
+      // Fraction min_simplex_ratio = Fraction(__INT_MAX__, 1);
 
       cout << endl;
       cout << "Эерэг Симплекс харьцаанууд: " << endl;
 
       // cout << "candidate row: " << candidate_row << endl;
 
-      // We'll store which rows tied on this min_ratio:
-    static const Fraction ZERO(0,1);
-    Fraction min_ratio = Fraction(__INT_MAX__, 1);
-    int candidate_r = -1;
+      static const Fraction ZERO(0,1);
+      Fraction min_ratio = Fraction(__INT_MAX__, 1);
+      int candidate_r = -1;
 
-    std::vector<int> tied_rows;
+      vector<int> ijil_simplex_haritsaanuud;
 
-    // 1) First pass: compute ratio for each row
-    for (int i = 0; i < valid_rows; i++) {
-        // Denominator: A[i][s]
+      // 1) Сул гишүүн бүрээр симплекс харьцааг зохиох
+      for (int i = 0; i < valid_rows; i++) 
+      {
         Fraction denom = A[i][s];
 
-        // Skip if denominator == 0, ratio not valid for pivot
-        if (denom == ZERO) {
-            // ratio is effectively infinite or undefined => skip
-            continue;
+        // 
+        if (denom == ZERO || denom < ZERO) 
+        {
+          // тэг эсвэл тэгээс бага бол алгасах
+          continue;
         }
 
-        // Compute ratio
         Fraction ratio = ZERO;
 
-        // If the row's RHS (sul_gishuud[i].value) is 0 and denom > 0 => ratio = 0
-        // else ratio = (sul_gishuud[i].value) / denom
-        if (sul_gishuud[i].value == ZERO && denom > ZERO) {
-            ratio = ZERO;  // 0 / positive => 0
-        } else {
-            ratio = sul_gishuud[i].value / denom;
+        // Сул гишүүнд харьцуулсан симплекс харьцаануудыг зохиох
+        if (sul_gishuud[i].value == ZERO && denom > ZERO) 
+        {
+          // 0 с.харьцаа сул гишүүнд байхад
+          ratio = ZERO; 
+        }
+        else
+        {
+          ratio = sul_gishuud[i].value / denom;
         }
 
-        // We consider the row valid if ratio >= 0
-        // (If your logic requires strictly > 0, change >= to >)
-        if (ratio > ZERO || ratio == ZERO) {
-            // Compare with current minimum
-            if (ratio < min_ratio) {
-                // Found a smaller ratio
-                min_ratio   = ratio;
-                candidate_r = i;
-                tied_rows.clear();
-                tied_rows.push_back(i);
-            }
-            else if (ratio == min_ratio) {
-                // It's tied with the current minimum
-                tied_rows.push_back(i);
-            }
-        }
-    }
+        // Сул гишүүн бүрээр биш мөр бүрээр гүйнэ
+        if (ratio > ZERO || ratio == ZERO) 
+        {
+          cout << "Симплекс харьцаа: " << i + 1 << "-р мөр" <<
+            "  " << ratio << endl;
 
-    // 2) Now handle tie-breaking
-    if (tied_rows.empty()) {
-        // Means no valid pivot row was found
+          // Тухайн хамгийн бага харьцаатай харьцуулах
+          if (ratio < min_ratio) 
+          {
+            // Хамгийн жижиг харьцааг хадгалах
+            min_ratio   = ratio;
+            candidate_r = i;
+
+            // Zuvhun neg oldson tul ijil_simplex_haritsaanuud-g tseverleed
+            // ug olson i-index-g hadgalah
+            ijil_simplex_haritsaanuud.clear();
+            ijil_simplex_haritsaanuud.push_back(i);
+          }
+          else if (ratio == min_ratio) 
+          {
+            // Тухайн минимум утгатай тэнцсэн
+            ijil_simplex_haritsaanuud.push_back(i);
+          }
+        }
+      }
+
+      // Ehleed tied-rows bnu ugui yu esvel
+      // gants baina uu gedgiig olson
+
+      // for (auto r: ijil_simplex_haritsaanuud)
+      // {
+      //   cout << "tied rows" << r << endl;
+      // }
+
+      // cout << "Min ratio: " <<  min_ratio << endl;
+
+      // 2) БӨХСӨН оновчтой шийд үед
+      // 2) Ижил симплекс харьцаа үүссэн үед
+      if (ijil_simplex_haritsaanuud.empty()) 
+      {
+        // Боломжит гол мөр олдоогүй
         candidate_r = -1;
-        std::cout << "No valid pivot row found.\n";
-    }
-    else if (tied_rows.size() == 1) {
-        // Exactly one row with the min ratio
-        candidate_r = tied_rows[0];
-    }
-    else {
-        // We have more than one row that shares the same min_ratio
-        // For a simple tie-break: choose the row with the smallest index
-        int chosen = tied_rows[0];
-        for (int j = 1; j < (int) tied_rows.size(); j++) {
-            if (tied_rows[j] < chosen) {
-                chosen = tied_rows[j];
-            }
+        std::cout << "Сонгогдох боломжтой бүх элементүүд сөрөг байна.\n";
+        zaaglagdaagui = false;
+
+        if (objective_function == "min")
+        {
+          cout << "Зорилгын функц доороосоо зааглагдаагүй!" << endl;
+          break;
         }
-        candidate_r = chosen;
-    }
+        else if (objective_function == "max")
+        {
+          cout << "Зорилгын функц дээрээсээ зааглагдаагүй!" << endl;
+          break;
+        }
+      }
+      else if (ijil_simplex_haritsaanuud.size() == 1) 
+      {        
+        // Ижил биш ганц харьцаа олдож байвал
+        candidate_r = ijil_simplex_haritsaanuud[0];
+        cout << endl;
+        cout << "Ижил симплекс харьцаанууд үүсээгүй!" << endl;
+        cout << endl;
+        cout << "Гол мөр: " << candidate_r 
+                  << " - симп.харьцаа = " << min_ratio.numerator << "/" << min_ratio.denominator << "\n";
+      }
+      else 
+      {
+        // Хэрвээ Бөхсөн оновчтой шийд байвал
+        // Ижил с.харьцаатай мөрүүдийн индексийн ашиглан
+        // Мөр бүрээр симплекс харьцаа зохиож хамгийн багийг
+        // хамгийн багийг авна. Харин тухайн харьцуулж буй
+        // баганад олдохгүй байвал дахин өөр багана гэх мэтээр явна.
 
-    // At this point, candidate_r is your pivot row
-    if (candidate_r >= 0) {
-        std::cout << "Pivot row chosen: " << candidate_r 
-                  << " with ratio = " << min_ratio.numerator << "/" << min_ratio.denominator << "\n";
-    }
+        vector<int> new_tied;
 
-      cout << endl;
-      cout << "Хамгийн бага симплекс харьцаа: " << endl;
-      cout << min_simplex_ratio << endl;
+        int count_new_tie = 0;
+        for (int j = valid_cols - 1; j >= 0; j--)
+        {
+          if (j == s)
+          {
+            continue;
+          }
+
+          Fraction tie_min = Fraction(__INT_MAX__, 1);
+          new_tied.clear();
+          // 2 , 1 , 0 columns
+          for (int rowIdx : ijil_simplex_haritsaanuud)
+          {
+            // cout << "ijil_simplex_haritsaanuud[i]: " << rowIdx << endl;
+            // cout << "ijil_simplex_haritsaanuud[i][j]: " << A[rowIdx][j] << endl;
+
+            // tied-rows gedeg n simplex ratio bolomjtoi
+            // muriiduug aguulj baigaa
+            Fraction denom = A[rowIdx][s];
+
+            Fraction secondary_ratio = A[rowIdx][j] / denom;
+            cout << "secondary_ratio: " << secondary_ratio << endl;
+
+            if (secondary_ratio < tie_min)
+            {
+              tie_min = secondary_ratio;
+              new_tied.clear();
+              new_tied.push_back(rowIdx);
+            }
+            else if (secondary_ratio == tie_min)
+            {
+              new_tied.push_back(rowIdx);
+            }
+          }
+
+          if (new_tied.empty()) 
+          {
+            candidate_r = -1;
+            std::cout << "Сонгогдох боломжтой бүх элементүүд сөрөг байна.\n";
+            zaaglagdaagui = false;
+          }
+          else if (new_tied.size() == 1) 
+          {        
+            candidate_r = ijil_simplex_haritsaanuud[0];
+            break;
+          }
+
+          count_new_tie++;
+        }
+        if (count_new_tie == valid_cols - 1)
+        {
+          cout << "EXHAUSTED" << " ";
+          candidate_r = new_tied[0];
+          cout << endl;
+        }
+      }
+
+      // if (candidate_r >= 0) {
+      //     std::cout << ": " << candidate_r 
+      //               << " симп.харьцаа = " << min_ratio.numerator << "/" << min_ratio.denominator << "\n";
+      // }
+
+      r = candidate_r;
+
+      string temp_elem;
+
+      temp_elem = free_vars[s];
+      free_vars[s] = original_vars[r];
+      original_vars[r] = temp_elem;
+
+      jordan_step(A, rows, cols, r, s);
       
+      for (int i = 0; i < valid_rows; i++)
+      {
+        for (int j = 0; j < cols; j++)
+        {
+          if (j == cols - 1)
+          {
+            sul_gishuud[i].value = A[i][j];
+          }
+        }
+      }
+      
+      cout << "  Хувиргалтын дараахь матриц: " << endl;
 
-      printMatrix(A, rows, cols);
+      printSystem(
+          A, original_vars, free_vars,
+          rows, cols
+      );
+    }
+
+    if (zaaglagdaagui)
+    {
+      int maxIndex = -1;
+      
+      unordered_map<string, int> var_to_row;
+
+      for (int i = 0; i < (int)original_vars.size(); i++) 
+      {
+        var_to_row[original_vars[i]] = i;
+      }
+
+      for (auto &var: original_vars)
+      {
+        int idx = extractIndex(var);
+        if (idx > maxIndex)
+        {
+          maxIndex = idx;
+        }
+      }
+
+      for (auto &var: free_vars)
+      {
+        int idx = extractIndex(var);
+        if (idx > maxIndex)
+        {
+          maxIndex = idx;
+        }
+      }
+
+      for (int i = 1; i <= maxIndex; ++i)
+      {
+        string varName = "x" + to_string(i);;
+
+        auto it = var_to_row.find(varName);
+        if (it != var_to_row.end()) {
+            
+            int row = it->second;
+            
+            Fraction value = A[row][cols - 1];
+            cout << varName << " = " << value << std::endl;
+        } else {
+            
+            cout << varName << " = 0" << std::endl;
+        }
+      }
+      
+      // printMatrix(A, rows, cols);
+      cout << "F " << objective_function << " = ";
+      cout << A[rows - 1][cols - 1] << endl;
     }
   }
 }
@@ -1016,7 +1263,7 @@ int main()
       }
     }
   }
-  
+
   int rows = fractionMatrix.size();
   cout << "Уншсан мөрийн тоо: " << rows 
         << " болон баганы тоо: " << cols << endl;
@@ -1057,6 +1304,7 @@ int main()
   free_vars.push_back("с.г");
   original_vars.push_back("F");
 
+  cout << endl;
   cout << "Чөлөөт үл мэдэгдэгчид: " << endl;
   for (auto &val : free_vars) cout << val << " ";
   cout << endl << endl;
@@ -1064,6 +1312,10 @@ int main()
   cout << "Үндсэн үл мэдэгдэгчид : " << endl;
   for (auto &val : original_vars) cout << val << " ";
   cout << endl << endl;
+
+  string objective_function;
+  cout << "Зорилгын функцын чиглэл оруулна уу: " << endl;
+  cin >> objective_function;
 
   // 2-р хувиргалтанд бэлдэж элементүүдийг сөрөг болгох
 
@@ -1120,6 +1372,7 @@ int main()
       }
   }
 
+  cout << endl;
   cout << "Сул гишүүд : " << endl;
   for (const auto &surug_entry : sul_gishuud)
   {
@@ -1135,12 +1388,13 @@ int main()
   string sul_gishuun_direction = "min";
 
   // Гаусс-Жорданы 2-р хувиргалт
-  tulguur_shiid(
-      A, rows, cols, 
-      free_vars,
-      original_vars,
-      sul_gishuud,
-      sul_gishuun_direction
+  onovchtoi_shiid(
+    A, rows, cols, 
+    free_vars,
+    original_vars,
+    sul_gishuud,
+    sul_gishuun_direction,
+    objective_function
   );
 
   // Санах ойгоо цэвэрлэх

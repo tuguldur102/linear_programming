@@ -360,7 +360,7 @@ void tulguur_shiid(
         // cout << "Teg mur: " << endl;
         // cout << r << endl;
 
-        Fraction min_col_elem = Fraction(__INT_MAX__, 1);
+        // Fraction min_col_elem = Fraction(__INT_MAX__, 1);
         
 
         int s = -1;
